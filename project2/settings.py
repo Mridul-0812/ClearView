@@ -122,3 +122,9 @@ EMAIL_SSL_KEYFILE = None
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 WHITENOISE_MIMETYPES = {'.css': 'text/css'}
+
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
+
+# Simplified storage to prevent 'Manifest' errors that block glass effects
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
