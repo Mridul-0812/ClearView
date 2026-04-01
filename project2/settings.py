@@ -11,7 +11,7 @@ SECRET_KEY = 'django-insecure-ea7mg)&p%-9w#gl7dls2+-3@p&beegt^w-pdd0g^e)o2#lyg%t
 DEBUG = True
 
 # Allowing all hosts for easy development and Tunneling
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['clearview-fr6i.onrender.com', 'localhost', '127.0.0.1']
 
 # This wildcard allows ANY Cloudflare tunnel URL to work with your forms
 CSRF_TRUSTED_ORIGINS = [
