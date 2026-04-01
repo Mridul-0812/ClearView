@@ -120,3 +120,5 @@ EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+WHITENOISE_MIMETYPES = {'.css': 'text/css'}
