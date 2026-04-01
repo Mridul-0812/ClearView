@@ -1,0 +1,47 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<div class="main-wrapper">
+    <div class="app-container glass-card" style="max-width: 500px; margin: 40px auto; padding: 30px; border-radius: 20px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+        
+        <div class="header" style="text-align: center; margin-bottom: 25px;">
+            <h1 style="color: #000; font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; margin: 0;">Edit Task</h1>
+            <p style="color: #636e72; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; margin-top: 5px;">Adjust your climb</p>
+        </div>
+
+        <form action="{% url 'tasks:edit' task.id %}" method="post">
+            {% csrf_token %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px; color: #2d3436;">Task Title</label>
+                <input type="text" name="title" value="{{ task.title }}" required 
+                    style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.5); font-family: inherit; font-size: 1rem;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px; color: #2d3436;">Priority Level</label>
+                <select name="priority" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.5); font-family: inherit;">
+                    <option value="Low" {% if task.priority == "Low" %}selected{% endif %}>Low</option>
+                    <option value="Medium" {% if task.priority == "Medium" %}selected{% endif %}>Medium</option>
+                    <option value="High" {% if task.priority == "High" %}selected{% endif %}>High</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px; color: #2d3436;">Due Date</label>
+                <input type="date" name="due_date" value="{{ task.due_date|date:'Y-m-d' }}"
+                    style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.5); font-family: inherit; font-size: 1rem;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-primary-row" style="flex: 2; background: #000; color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer;">
+                    Save Changes
+                </button>
+                <a href="{% url 'tasks:index' %}" style="flex: 1; text-align: center; text-decoration: none; padding: 12px; border-radius: 12px; border: 1px solid #000; color: #000; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

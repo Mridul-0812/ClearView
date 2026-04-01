@@ -1,0 +1,15 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<div class="main-wrapper">
+    <div class="app-container" style="text-align: center; padding: 40px;">
+        <h1 style="font-size: 3rem;">📧</h1>
+        <h2 style="margin-top: 20px;">Check your Terminal!</h2>
+        <p style="margin: 20px 0; color: var(--text-dark); opacity: 0.8;">
+            We've sent an activation link to your "email." Since we're in development, 
+            <strong>look at the terminal window on your Mac</strong> to find the link!
+        </p>
+        <a href="{% url 'tasks:welcome' %}" style="color: #4facfe; font-weight: 600; text-decoration: none;">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

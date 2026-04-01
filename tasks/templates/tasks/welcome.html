@@ -1,0 +1,127 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<div class="welcome-background">
+    <div class="glass-card">
+        <div class="logo-wrapper">
+            <h1 class="brand-logo">ClearView</h1>
+            <div class="logo-underline"></div>
+        </div>
+        
+        <p class="tagline">Your focused, private workspace.</p>
+        
+        <div class="button-group">
+            <a href="{% url 'tasks:login' %}" class="btn-signin">Sign In</a>
+            <a href="{% url 'tasks:signup' %}" class="btn-create">Create Account</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Importing a high-end Cursive (Alex Brush) and a clean Sans (Inter) */
+    @import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Inter:wght@300;600&display=swap');
+
+    .welcome-background {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* The background image from your screenshot stays in layout.html */
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        padding: 3.5rem 2rem;
+        border-radius: 50px;
+        text-align: center;
+        width: 420px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        animation: cardFadeIn 1.2s ease-out;
+    }
+
+    .logo-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    .brand-logo {
+        font-family: 'Alex Brush', cursive; /* Elegant, unique cursive */
+        font-size: 4.5rem;
+        font-weight: 400;
+        margin: 0;
+        background: linear-gradient(to right, #2d3436, #636e72);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        /* Soft glow effect */
+        filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
+    }
+
+    .logo-underline {
+        height: 2px;
+        width: 0%;
+        background: linear-gradient(to right, transparent, #716cf2, transparent);
+        margin: 0 auto;
+        transition: width 1s ease-in-out;
+        animation: underlineGrow 1.5s forwards;
+        animation-delay: 0.5s;
+    }
+
+    .tagline {
+        font-family: 'Inter', sans-serif;
+        color: #636e72;
+        font-size: 0.95rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 2.5rem;
+        opacity: 0;
+        animation: fadeIn 1s forwards;
+        animation-delay: 1s;
+    }
+
+    /* Buttons */
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 0 20px;
+    }
+
+    .btn-signin {
+        background: #716cf2;
+        color: white;
+        padding: 14px;
+        border-radius: 16px;
+        text-decoration: none;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(113, 108, 242, 0.3);
+    }
+
+    .btn-create {
+        background: rgba(255, 255, 255, 0.8);
+        color: #2d3436;
+        padding: 14px;
+        border-radius: 16px;
+        text-decoration: none;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+
+    /* Hover Effects */
+    .btn-signin:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(113, 108, 242, 0.4); }
+    .btn-create:hover { background: white; transform: translateY(-2px); }
+
+    /* Animations */
+    @keyframes cardFadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes underlineGrow { from { width: 0%; } to { width: 80%; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 0.7; } }
+</style>
+{% endblock %}

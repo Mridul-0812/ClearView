@@ -1,0 +1,372 @@
+/* --- Global Theme & Variables --- */
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg-glass: rgba(255, 255, 255, 0.72);
+    --border-glass: rgba(255, 255, 255, 0.5);
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    
+    /* Priority Colors */
+    --high-red: #ef4444;      
+    --med-orange: #f59e0b;    
+    --low-green: #10b981;     
+    
+    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    --shadow-heavy: 0 50px 100px -20px rgba(0, 0, 0, 0.4);
+    --btn-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    overflow-x: hidden;
+    padding: 20px;
+}
+
+/* --- FIX: Background Toggle Button (Locked Top Right) --- */
+.bg-toggle-btn, [onclick*="changeBackground"] {
+    position: fixed !important;
+    top: 25px !important;
+    right: 25px !important;
+    z-index: 999999 !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-glass) !important;
+    border-radius: 14px !important;
+    padding: 10px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.bg-toggle-btn:hover {
+    transform: scale(1.1) rotate(5deg);
+    background: #ffffff !important;
+}
+
+/* --- Unified Layout Architecture --- */
+.main-wrapper {
+    width: 100%;
+    max-width: 500px; 
+    z-index: 10;
+    margin: 0 auto;
+}
+
+.app-container {
+    background: var(--bg-glass);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid var(--border-glass);
+    border-radius: 42px;
+    padding: 35px;
+    box-shadow: var(--shadow-heavy);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Header & Single-Row Navigation --- */
+.header-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+    margin-top: 15px;
+}
+
+.btn-primary-row {
+    flex: 1;
+    padding: 12px 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 14px;
+    font-weight: 700;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(0,0,0,0.05);
+    background: #ffffff;
+    color: var(--text-dark);
+    box-shadow: var(--shadow-soft);
+}
+
+.btn-primary-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-primary-row.active-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+}
+
+/* --- TASK CARDS & BADGE UX --- */
+#workspace-content {
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-top: 20px;
+}
+
+.task-card-container {
+    position: relative;
+    margin-bottom: 15px;
+    border-radius: 22px;
+}
+
+.task-card {
+    background: #ffffff;
+    padding: 18px 22px;
+    border-radius: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+    border: 1px solid #f1f5f9;
+}
+
+/* --- New Badge Styling --- */
+.task-meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    align-items: center;
+}
+
+.badge {
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Priority Badge Boxes */
+.badge-priority-high { 
+    background: rgba(239, 68, 68, 0.12); 
+    color: var(--high-red); 
+    border: 1px solid rgba(239, 68, 68, 0.1);
+}
+.badge-priority-medium { 
+    background: rgba(245, 158, 11, 0.12); 
+    color: var(--med-orange); 
+    border: 1px solid rgba(245, 158, 11, 0.1);
+}
+.badge-priority-low { 
+    background: rgba(16, 185, 129, 0.12); 
+    color: var(--low-green); 
+    border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+/* Date Badge Box */
+.badge-date {
+    background: #f8fafc;
+    color: var(--text-muted);
+    border: 1px solid #e2e8f0;
+}
+
+/* --- Aesthetics for the Delete Button --- */
+.btn-delete {
+    background: #fff1f2;
+    color: #f43f5e;
+    border: 1px solid #fecdd3;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    outline: none;
+}
+
+.btn-delete:hover {
+    background: #f43f5e;
+    color: white;
+    transform: scale(1.1) rotate(8deg);
+    box-shadow: 0 8px 20px rgba(244, 63, 94, 0.2);
+}
+
+.btn-delete:active {
+    transform: scale(0.9);
+}
+
+/* Priority Left Border Indicator (Subtle accent) */
+.task-card-container[data-priority="high"] .task-card { border-left: 6px solid var(--high-red); }
+.task-card-container[data-priority="medium"] .task-card { border-left: 6px solid var(--med-orange); }
+.task-card-container[data-priority="low"] .task-card { border-left: 6px solid var(--low-green); }
+
+/* --- ADD TASK SCREEN: PREMIUM OVERHAUL --- */
+.add-task-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-top: 30px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-group label {
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-left: 5px;
+}
+
+/* The "Classy" Back Button Styling */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.4);
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-glass);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(5px);
+    width: fit-content;
+}
+
+.btn-back:hover {
+    background: #ffffff;
+    transform: translateY(-2px) translateX(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    color: var(--primary-hover);
+}
+
+.btn-back svg {
+    transition: transform 0.3s ease;
+}
+
+.btn-back:hover svg {
+    transform: translateX(-3px);
+}
+
+.glass-input, .glass-select {
+    background: #ffffff;
+    border: 2px solid transparent;
+    border-radius: 18px;
+    padding: 16px 20px;
+    font-size: 1rem;
+    color: var(--text-dark);
+    outline: none;
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    transition: all 0.3s ease;
+}
+
+.glass-input:focus, .glass-select:focus {
+    border-color: var(--primary);
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.15);
+    transform: translateY(-1px);
+}
+
+.btn-submit {
+    background: var(--btn-gradient);
+    color: white;
+    padding: 18px;
+    border-radius: 20px;
+    border: none;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-top: 15px;
+    box-shadow: 0 15px 35px rgba(99, 102, 241, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-submit:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 45px rgba(99, 102, 241, 0.5);
+    filter: brightness(1.1);
+}
+
+/* --- THE IMMERSIVE GAME OVERLAY --- */
+.game-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: linear-gradient(rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.96));
+    z-index: 999999;
+    display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(20px);
+}
+
+.game-container {
+    background: #ffffff;
+    padding: 40px 30px;
+    border-radius: 50px;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+/* --- Progress Tracking --- */
+.bar-bg {
+    background: rgba(0,0,0,0.06);
+    height: 12px;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.bar-fill {
+    height: 100%;
+    background: var(--btn-gradient);
+    transition: width 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* --- Scrollbar Customization --- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 480px) {
+    .app-container { padding: 30px 20px; }
+    .btn-primary-row { font-size: 0.65rem; padding: 10px 2px; }
+    .bg-toggle-btn { top: 15px !important; right: 15px !important; }
+}

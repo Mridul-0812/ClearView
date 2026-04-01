@@ -1,0 +1,218 @@
+{% extends "tasks/layout.html" %}
+{% block body %}
+<div class="min-h-screen flex items-center justify-center p-4">
+    <div style="width: 100%; max-width: 950px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 40px; padding: 30px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        
+        <div style="text-align: center;">
+            <h1 style="font-size: 2.5rem; font-weight: 800; color: #1e293b; margin: 0; text-shadow: 0 4px 10px rgba(255,255,255,0.2); letter-spacing: -1px;">🎧 Zen Beats</h1>
+            
+            <div class="search-container" style="display: flex; gap: 10px; background: rgba(255,255,255,0.25); padding: 8px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.4); margin: 20px auto; max-width: 600px; transition: 0.3s;">
+                <input type="text" id="searchInput" onkeyup="filterPlaylist()" placeholder="Find a vibe in your list..." 
+                       style="flex: 1; background: transparent; border: none; outline: none; color: #1e293b; padding: 5px 15px; font-weight: 700; font-size: 1rem;">
+                <div id="filterStatus" style="padding: 10px 20px; color: #6366f1; font-weight: 900; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase;">Ready</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 25px; flex-wrap: wrap;">
+            <div style="flex: 1.5; min-width: 320px;">
+                <div class="player-wrapper" style="position: relative; padding-top: 56.25%; background: #000; border-radius: 30px; overflow: hidden; border: 4px solid rgba(255,255,255,0.2); box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+                    <div id="player" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 30px;">
+                    <button onclick="prevVideo()" class="control-btn">PREV</button>
+                    <button id="shuffleBtn" onclick="toggleShuffle()" class="control-btn toggle-btn">SHUFFLE: OFF</button>
+                    <button id="loopBtn" onclick="toggleLoop()" class="control-btn toggle-btn">LOOP: OFF</button>
+                    <button onclick="nextVideo()" class="control-btn next-btn" style="background: #6366f1; color: white;">NEXT</button>
+                </div>
+            </div>
+
+            <div style="flex: 1; min-width: 280px; background: rgba(0,0,0,0.3); border-radius: 30px; padding: 25px; max-height: 500px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: white; margin: 0; font-size: 1.2rem; font-weight: 800;">Verified Tracks</h3>
+                    <div id="trackCount" style="background: #6366f1; color: white; padding: 2px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">0 Tracks</div>
+                </div>
+                <div id="playlistContainer" style="overflow-y: auto; flex: 1; padding-right: 10px;">
+                    <p id="loadingMsg" style="color: rgba(255,255,255,0.4); font-size: 0.9rem; text-align: center; margin-top: 50px;">Validating playable tracks...</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="{% url 'tasks:index' %}" style="color: #1e293b; font-weight: 900; text-decoration: none; font-size: 0.8rem; letter-spacing: 1px;">← BACK TO WORKSPACE</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .control-btn { padding: 14px 22px; background: rgba(255,255,255,0.9); border: none; border-radius: 18px; font-weight: 800; cursor: pointer; font-size: 0.7rem; transition: 0.3s; color: #1e293b; }
+    .control-btn:hover { transform: translateY(-3px); background: #fff; }
+    .control-btn.active-toggle { background: #6366f1 !important; color: white !important; }
+    .playlist-item { padding: 15px; margin-bottom: 12px; background: rgba(255,255,255,0.06); border-radius: 20px; cursor: pointer; transition: 0.3s; border: 1px solid transparent; display: flex; flex-direction: column; gap: 4px; position: relative; }
+    .playlist-item:hover { background: rgba(255,255,255,0.12); transform: translateX(8px); }
+    .playlist-item.active { background: rgba(99, 102, 241, 0.3); border-left: 6px solid #6366f1; border-color: rgba(99, 102, 241, 0.4); }
+    .track-title { color: #fff; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 20px;}
+    .track-author { color: rgba(255,255,255,0.4); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+    .active .playing-icon { display: block; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; background: #6366f1; border-radius: 50%; box-shadow: 0 0 10px #6366f1; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { transform: translateY(-50%) scale(1); opacity: 1; } 50% { transform: translateY(-50%) scale(1.5); opacity: 0.5; } 100% { transform: translateY(-50%) scale(1); opacity: 1; } }
+    #playlistContainer::-webkit-scrollbar { width: 5px; }
+    #playlistContainer::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+</style>
+
+<script>
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    var player;
+    var isShuffle = false;
+    var isLoop = false;
+    var validTracks = []; 
+    var currentQueue = []; 
+    var defaultPlaylistId = 'PLXiimcZTRQOJnrHda-xuoGFuIq6xNsWtw';
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '100%', width: '100%',
+            playerVars: { 
+                'listType': 'playlist', 
+                'list': defaultPlaylistId, 
+                'autoplay': 0, 
+                'modestbranding': 1,
+                'rel': 0 
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange,
+                'onError': onPlayerError // THE FIX: Listen for unplayable video errors
+            }
+        });
+    }
+
+    async function onPlayerReady(event) {
+        const rawPlaylist = player.getPlaylist();
+        
+        // AGGRESSIVE FILTERING: Check oEmbed AND filter known "Unavailable" strings
+        const checkTracks = rawPlaylist.map(async (id) => {
+            try {
+                // We use noembed because it's faster for bulk validation
+                const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${id}`);
+                const data = await response.json();
+                
+                // If it has a generic error or the title contains unplayable keywords, drop it
+                if (!data.title || data.error || data.title.includes("Deleted video") || data.title.includes("Private video")) {
+                    return null;
+                }
+                return { id, title: data.title, author: data.author_name };
+            } catch (e) { return null; }
+        });
+
+        const results = await Promise.all(checkTracks);
+        validTracks = results.filter(track => track !== null);
+        currentQueue = validTracks.map(t => t.id);
+        
+        // Update the player with only the "survivors"
+        player.loadPlaylist(currentQueue, 0, 0);
+        player.stopVideo();
+        updatePlaylistUI();
+    }
+
+    // THE FAILSAFE: If a video slips through and YouTube throws an error during play
+    function onPlayerError(event) {
+        const failedVideoId = player.getVideoData().video_id;
+        console.warn("Detected unplayable track:", failedVideoId);
+
+        // Remove the dead track from our arrays immediately
+        validTracks = validTracks.filter(t => t.id !== failedVideoId);
+        currentQueue = currentQueue.filter(id => id !== failedVideoId);
+
+        // Rebuild UI and skip to next song
+        updatePlaylistUI();
+        player.nextVideo();
+    }
+
+    function updatePlaylistUI() {
+        const container = document.getElementById('playlistContainer');
+        container.innerHTML = ''; 
+        document.getElementById('trackCount').innerText = currentQueue.length + " Tracks";
+
+        currentQueue.forEach((id, index) => {
+            const trackData = validTracks.find(t => t.id === id);
+            let item = document.createElement('div');
+            item.className = 'playlist-item';
+            item.id = 'track-' + id;
+            item.onclick = () => player.playVideoAt(index);
+            
+            item.innerHTML = `
+                <div class="playing-icon" style="display:none"></div>
+                <span class="track-title">${trackData ? trackData.title : 'Playable Track'}</span>
+                <span class="track-author">${trackData ? trackData.author : 'Zen Beats'}</span>
+            `;
+            container.appendChild(item);
+        });
+        highlightCurrent();
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.PLAYING) highlightCurrent();
+        if (event.data === YT.PlayerState.ENDED) isLoop ? player.playVideo() : nextVideo();
+    }
+
+    function highlightCurrent() {
+        const videoData = player.getVideoData();
+        if (!videoData) return;
+        const currentId = videoData.video_id;
+        
+        document.querySelectorAll('.playlist-item').forEach(el => {
+            el.classList.remove('active');
+            const icon = el.querySelector('.playing-icon');
+            if(icon) icon.style.display = 'none';
+        });
+
+        const activeEl = document.getElementById('track-' + currentId);
+        if(activeEl) {
+            activeEl.classList.add('active');
+            const icon = activeEl.querySelector('.playing-icon');
+            if(icon) icon.style.display = 'block';
+            activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    function toggleShuffle() {
+        isShuffle = !isShuffle;
+        const btn = document.getElementById('shuffleBtn');
+        btn.classList.toggle('active-toggle', isShuffle);
+        btn.innerText = "SHUFFLE: " + (isShuffle ? "ON" : "OFF");
+
+        if (isShuffle) {
+            for (let i = currentQueue.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentQueue[i], currentQueue[j]] = [currentQueue[j], currentQueue[i]];
+            }
+        } else {
+            currentQueue = validTracks.map(t => t.id);
+        }
+
+        player.loadPlaylist(currentQueue, 0, 0);
+        updatePlaylistUI();
+    }
+
+    function toggleLoop() {
+        isLoop = !isLoop;
+        const btn = document.getElementById('loopBtn');
+        btn.classList.toggle('active-toggle', isLoop);
+        btn.innerText = "LOOP: " + (isLoop ? "ON" : "OFF");
+    }
+
+    function nextVideo() { player.nextVideo(); }
+    function prevVideo() { player.previousVideo(); }
+
+    function filterPlaylist() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.playlist-item').forEach(item => {
+            item.style.display = item.innerText.toLowerCase().includes(query) ? "flex" : "none";
+        });
+    }
+</script>
+{% endblock %}

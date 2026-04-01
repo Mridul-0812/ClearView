@@ -1,0 +1,98 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<div class="main-wrapper">
+    <div class="app-container" style="max-width: 450px; max-height: 85vh; display: flex; flex-direction: column;">
+        
+        <h2 style="text-align: center; margin-bottom: 20px; font-weight: 700; flex-shrink: 0;">Start Your Workspace</h2>
+        
+        <div class="scrollable-form-area">
+            <form method="post" class="glass-form">
+                {% csrf_token %}
+                
+                {% if error %}
+                    <p style="color: var(--high-red); text-align: center; font-weight: bold; font-size: 0.85rem;">{{ error }}</p>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="id_email">Email Address:</label>
+                    <input type="email" name="email" id="id_email" required placeholder="name@example.com">
+                </div>
+
+                <div style="margin-top: 15px;">
+                    {{ form.as_p }}
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin: 25px 0; padding: 12px; font-weight: 600;">Create Account</button>
+            </form>
+        </div>
+
+        <div style="flex-shrink: 0; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.05);">
+            <div style="text-align: center; font-size: 0.9rem; color: var(--text-dark); opacity: 0.8;">
+                Already have an account? <a href="{% url 'login' %}" style="color: #4facfe; font-weight: 700; text-decoration: none;">Log In</a>
+            </div>
+            
+            <div style="text-align: center; margin-top: 10px;">
+                <a href="{% url 'tasks:welcome' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem;">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* This creates the scrollable area inside the white rectangle */
+    .scrollable-form-area {
+        overflow-y: auto;
+        flex-grow: 1;
+        padding-right: 10px; /* Space for scrollbar */
+        margin-right: -5px;
+    }
+
+    /* Custom scrollbar styling for inside the rectangle */
+    .scrollable-form-area::-webkit-scrollbar {
+        width: 5px;
+    }
+    .scrollable-form-area::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+
+    /* Targeting the Django-generated paragraphs */
+    .glass-form p { 
+        margin-bottom: 15px; 
+    }
+    
+    .glass-form label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+
+    .glass-form input {
+        width: 100%; 
+        padding: 12px; 
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.3); 
+        background: rgba(255,255,255,0.4);
+        backdrop-filter: blur(5px); 
+        outline: none; 
+        transition: 0.3s;
+        font-family: inherit;
+    }
+
+    .glass-form input:focus { 
+        background: rgba(255,255,255,0.7); 
+        border-color: #4facfe; 
+        box-shadow: 0 0 15px rgba(79, 172, 254, 0.2);
+    }
+
+    .helptext, .helptext ul { 
+        font-size: 0.7rem; 
+        color: rgba(0,0,0,0.5); 
+        margin-top: 5px;
+        list-style: none;
+        padding-left: 0;
+    }
+</style>
+{% endblock %}

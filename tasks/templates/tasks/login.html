@@ -1,0 +1,121 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<div class="main-wrapper">
+    <div class="app-container" style="text-align: center; max-width: 450px;">
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert-glass {{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="header" style="justify-content: center; margin-bottom: 2rem;">
+            <h1 style="font-family: 'Alex Brush', cursive; font-size: 3.5rem; margin-bottom: 0;">ClearView</h1>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: -5px;">Welcome Back</p>
+        </div>
+        
+        <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+            {% csrf_token %}
+            <div class="glass-form" style="text-align: left; color: var(--text-dark);">
+                {{ form.as_p }}
+            </div>
+            
+            <div style="text-align: right; margin-top: -10px;">
+                <a href="{% url 'tasks:password_reset' %}" style="font-size: 0.8rem; color: #4facfe; text-decoration: none; font-weight: 500;">Forgot password?</a>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="padding: 12px; font-size: 1rem; margin-top: 10px; width: 100%;">Log In</button>
+        </form>
+        
+        <div style="margin-top: 25px; font-size: 0.9rem; color: rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 10px;">
+            <div>
+                Don't have an account? 
+                <a href="{% url 'tasks:signup' %}" style="color: #4facfe; text-decoration: none; font-weight: 600;">Sign up here</a>
+            </div>
+            <a href="{% url 'tasks:welcome' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.8rem;">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Alex+Brush&display=swap');
+
+    /* Message Alert Styling */
+    .alert-glass {
+        padding: 15px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        animation: fadeIn 0.5s ease;
+    }
+
+    .success {
+        background: rgba(76, 175, 80, 0.2);
+        color: #1b5e20;
+        border-color: rgba(76, 175, 80, 0.3);
+    }
+
+    .error {
+        background: rgba(244, 67, 54, 0.2);
+        color: #b71c1c;
+        border-color: rgba(244, 67, 54, 0.3);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Glass Form Styles */
+    .glass-form p {
+        margin-bottom: 15px;
+    }
+    
+    .glass-form label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 5px;
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+
+    .glass-form input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(5px);
+        outline: none;
+        font-family: 'Poppins', sans-serif;
+        transition: all 0.3s ease;
+    }
+
+    .glass-form input:focus {
+        background: rgba(255, 255, 255, 0.7);
+        border-color: #4facfe;
+        box-shadow: 0 0 10px rgba(79, 172, 254, 0.2);
+    }
+
+    .btn-primary {
+        background: #716cf2;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        transform: scale(1.02);
+        background: #5d58e0;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<div class="main-wrapper">
+    <div class="app-container">
+        
+        <div class="add-task-header">
+            <h1 style="font-weight: 900; color: var(--text-dark); margin-bottom: 5px;">Add a Task</h1>
+            <a href="{% url 'tasks:index' %}" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Back to Workspace
+            </a>
+        </div>
+
+        <form action="{% url 'tasks:add' %}" method="post" class="add-task-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="title">Task Description</label>
+                <input type="text" 
+                       id="title"
+                       name="title" 
+                       placeholder="What needs to be done?" 
+                       required 
+                       class="glass-input">
+            </div>
+
+            <div class="form-group">
+                <label for="priority">Priority Level</label>
+                <select name="priority" id="priority" class="glass-select">
+                    <option value="Low">Low Priority (Green)</option>
+                    <option value="Medium" selected>Medium Priority (Orange)</option>
+                    <option value="High">High Priority (Red)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="due_date">Due Date</label>
+                <input type="date" 
+                       id="due_date"
+                       name="due_date" 
+                       class="glass-input">
+            </div>
+
+            <button type="submit" class="btn-submit">
+                Create Task
+            </button>
+            
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<div class="main-wrapper" style="display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;">
+    <div class="app-container" style="max-width: 800px; width: 100%; padding: 40px; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(20px); border-radius: 24px; border: 1px solid rgba(255,255,255,0.2); color: white;">
+        
+        <div class="header" style="text-align: center; margin-bottom: 30px;">
+            <a href="{% url 'tasks:index' %}" style="float: left; color: white; text-decoration: none; opacity: 0.8;">← Back</a>
+            <h1 style="margin: 0; font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">Climb Analytics</h1>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-bottom: 40px;">
+            <h3 style="margin-top: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">7-Day Progress (The Range)</h3>
+            <canvas id="climbChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <h3 style="text-align: center; font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">Earned Achievements</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+            {% for badge in badges %}
+            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">{{ badge.icon }}</div>
+                <div style="font-weight: 800; font-size: 1.1rem;">{{ badge.name }}</div>
+                <div style="font-size: 0.7rem; opacity: 0.6; margin-top: 5px;">{{ badge.desc }}</div>
+            </div>
+            {% empty %}
+            <p style="grid-column: 1/-1; text-align: center; opacity: 0.5;">Keep climbing to earn badges!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('climbChart').getContext('2d');
+    
+    // Create a gradient for the "Mountain" look
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
+    gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ labels|safe }},
+            datasets: [{
+                label: 'Tasks Completed',
+                data: {{ data|safe }},
+                borderColor: '#818cf8',
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.4, // Smooth curves for mountains
+                borderWidth: 3,
+                pointBackgroundColor: '#fff',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    ticks: { color: 'rgba(255,255,255,0.7)', stepSize: 1 },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: { 
+                    ticks: { color: 'rgba(255,255,255,0.7)' },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

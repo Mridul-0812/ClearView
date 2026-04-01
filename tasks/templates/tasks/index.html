@@ -1,0 +1,587 @@
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+<audio id="zenPopSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+
+<div id="zenNotification" class="zen-toast" style="display: none;">
+    <div class="zen-toast-content">
+        <span id="zenIcon">🏔️</span>
+        <p id="zenMessage"></p>
+    </div>
+</div>
+
+<div id="gameModal" class="game-overlay" style="display: none;">
+    <div class="game-container">
+        <button class="close-game" onclick="closeGame()" style="position: absolute; top: 20px; right: 20px; font-size: 2rem; border: none; background: none; cursor: pointer;">×</button>
+        <h2 style="margin-bottom: 20px; font-weight: 900; letter-spacing: 2px; color: #1e293b;">SUMMIT RUNNER</h2>
+        
+        <canvas id="gameCanvas" width="400" height="150" style="background: #f8fafc; border-radius: 20px; width: 100%; border: 2px solid #e2e8f0;"></canvas>
+        
+        <p style="font-size: 0.85rem; font-weight: 700; color: #64748b; margin: 15px 0;">
+            Press <b>SPACE</b> or <b>TAP</b> to Jump
+        </p>
+
+        <div class="game-stats" style="display: flex; justify-content: space-around; width: 100%; font-size: 1.1rem; font-weight: 800; color: #1e293b; padding-top: 10px; border-top: 2px solid #e2e8f0;">
+            <div>Level: <span id="gameLevel">1</span></div> <div>Score: <span id="currentScore">0</span></div>
+            <div style="color: #6366f1;">Best: <span id="highScoreDisplay">0</span></div>
+        </div>
+    </div>
+</div>
+
+<div class="main-wrapper" id="mainDashboardWrapper">
+    <div class="app-container" id="main-workspace">
+        
+        <div class="header" style="display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; margin-bottom: 30px;">
+            <div class="title-section" style="text-align: center; width: 100%; position: relative;">
+                <button class="btn-minimize" id="min-btn" onclick="toggleWorkspace()" 
+                    style="position: absolute; top: -10px; left: 0; background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    −
+                </button>
+                
+                <h1 style="color: #000; margin: 0; font-size: 2.2rem; font-weight: 800; letter-spacing: -1px;">
+                    {{ user.username }}'s Workspace
+                </h1>
+                <p id="live-indicator" style="font-size: 0.9rem; color: #444; font-weight: 700; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;"></p>
+            </div>
+        
+            <div class="header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <a href="{% url 'tasks:timer' %}" class="btn-primary-row">⏱️ Timer</a>
+                <a href="{% url 'tasks:add' %}" class="btn-primary-row active-btn">+ Task</a>
+                <a href="{% url 'tasks:climb_stats' %}" class="btn-primary-row">📊 Stats</a>
+                
+                <a href="{% url 'tasks:zen_beats' %}" class="btn-primary-row" 
+                   style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; border: none; font-weight: bold;">
+                   🎵 Zen Beats
+                </a>
+            
+                <form action="{% url 'tasks:logout' %}" method="post" style="flex: 1; display: inline; margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-primary-row" 
+                        style="width: 100%; cursor: pointer; border: none; background: rgba(255, 255, 255, 0.8); color: #2d3436; transition: all 0.3s ease;"
+                        onmouseover="this.style.background='rgba(255, 118, 117, 0.2)'; this.style.color='#d63031';"
+                        onmouseout="this.style.background='rgba(255, 255, 255, 0.8)'; this.style.color='#2d3436';">
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="progress-section" style="margin: 25px 0;">
+            <div class="progress-labels" style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; color: #000; text-transform: uppercase;">
+                <span>Completion Status</span>
+                <span id="perc-label">0%</span>
+            </div>
+            <div class="bar-bg" style="background: rgba(0,0,0,0.1); height: 8px; border-radius: 10px;">
+                <div id="bar-fill" class="bar-fill" style="width: 0%; height: 100%; background: #000; border-radius: 10px; transition: width 0.6s ease;"></div>
+            </div>
+        </div>
+
+        <div id="workspace-content">
+            <div class="filter-bar" style="position: sticky; top: 0; z-index: 10; padding-bottom: 15px; display: flex; gap: 10px;">
+                <input type="text" id="taskSearch" placeholder="Find a task..." class="glass-input" style="flex: 2;">
+                <select id="priorityFilter" class="glass-select" style="flex: 1;">
+                    <option value="all">All Levels</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+
+            <ul class="task-list" id="taskList" style="list-style: none; padding: 0;">
+                {% for task in tasks %}
+                    <li class="task-card-container" data-priority="{{ task.priority|lower }}" data-task-id="{{ task.id }}">
+                        <div class="task-card {% if task.completed %}done{% endif %}" style="background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); margin-bottom: 12px; padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.3);">
+                            <div class="task-main" style="display: flex; align-items: center; gap: 15px;">
+                                <form action="{% url 'tasks:toggle' task.id %}" method="post" id="toggle-form-{{ task.id }}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="check-circle" style="background: none; border: 2px solid #000; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">
+                                        {% if task.completed %}✓{% else %}○{% endif %}
+                                    </button>
+                                </form>
+                                <div class="task-text" style="display: flex; flex-direction: column;">
+                                    <span class="title" style="{% if task.completed %}text-decoration: line-through; opacity: 0.6;{% endif %}">{{ task.title }}</span>
+                                    
+                                    <div class="task-meta" style="display: flex; gap: 8px; align-items: center;">
+                                        <span class="badge badge-priority-{{ task.priority|lower }}" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">
+                                            {{ task.priority }}
+                                        </span>
+                                        {% if task.due_date %}
+                                            <span class="badge badge-date due-tag" data-date="{{ task.due_date|date:'Y-m-d' }}" style="font-size: 0.7rem; display: flex; align-items: center;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                                {{ task.due_date }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="task-actions" style="display: flex; align-items: center; gap: 12px;">
+                                <a href="{% url 'tasks:edit' task.id %}" class="btn-edit" title="Edit Task" style="text-decoration: none; font-size: 1.1rem; filter: grayscale(1); transition: 0.2s;" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'">
+                                    ✏️
+                                </a>
+
+                                <form action="{% url 'tasks:delete' task.id %}" method="post" id="delete-form-{{ task.id }}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete" title="Delete Task" style="background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #ff7675;"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                {% empty %}
+                    <div id="empty-state" style="text-align: center; padding: 40px; color: #636e72; cursor: pointer;" onclick="openGame()">
+                        <p style="font-size: 2.5rem; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.2)'">🏔️</p>
+                        <p style="font-weight: 600;">Your workspace is clear. Click the mountain to climb!</p>
+                    </div>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const containers = document.querySelectorAll('.task-card-container');
+        containers.forEach(container => {
+            const card = container.querySelector('.task-card');
+            const taskId = container.getAttribute('data-task-id');
+            const mc = new Hammer(card);
+            mc.on("pan", (ev) => {
+                if (Math.abs(ev.deltaX) < 200) {
+                    card.style.transform = `translateX(${ev.deltaX}px)`;
+                    card.style.transition = "none";
+                }
+            });
+            mc.on("panend", (ev) => {
+                card.style.transition = "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+                if (ev.deltaX > 140) {
+                    card.style.transform = "translateX(100vw)";
+                    setTimeout(() => document.getElementById(`toggle-form-${taskId}`).submit(), 250);
+                } else if (ev.deltaX < -140) {
+                    card.style.transform = "translateX(-100vw)";
+                    setTimeout(() => document.getElementById(`delete-form-${taskId}`).submit(), 250);
+                } else {
+                    card.style.transform = "translateX(0)";
+                }
+            });
+        });
+
+        document.getElementById('taskSearch').addEventListener('input', filterTasks);
+        document.getElementById('priorityFilter').addEventListener('change', filterTasks);
+        
+        setInterval(updateHeader, 1000);
+        updateHeader();
+        updateProgress();
+        updateDueDateColors();
+        checkNudgeTimer();
+    });
+
+    // --- GAME LOGIC ---
+    // --- ACCELERATED GAME LOGIC WITH LEVELS ---
+// --- SUMMIT RUNNER: ATMOSPHERIC PRODIGY (ADVANCED WEATHER ENGINE) ---
+let gameActive = false;
+let score = 0;
+let currentLevel = 1;
+let gameSpeed = 5.0; 
+const speedIncrement = 0.001; 
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const levelColors = ["#f8fafc", "#e2e8f0", "#cbd5e1", "#94a3b8", "#475569", "#1e293b", "#0f172a"];
+const obstacleColors = ["#ef4444", "#f97316", "#f59e0b", "#84cc16", "#06b6d4", "#6366f1", "#a855f7"];
+let funkyClimberColor = "#6366f1"; 
+
+let climber = { x: 60, y: 110, w: 24, h: 32, dy: 0, jump: -12.5, grav: 0.8, grounded: true, rotation: 0, maxJumps: 1 };
+let jumpsRemaining = 0; 
+let obstacles = [];
+let clouds = [];
+let particles = []; 
+let windLines = []; // Visual lines for wind
+let lightningFlash = 0; // Flash intensity
+
+// Enhanced Weather State
+let weather = { 
+    type: 'clear', 
+    timer: 150, 
+    windForce: 0, 
+    intensity: 0, 
+    transitioning: false 
+};
+
+let celestialAngle = -Math.PI / 4; 
+
+function openGame() {
+    document.getElementById('mainDashboardWrapper').style.display = 'none';
+    const userHighScore = localStorage.getItem('summitHigh') || 0;
+    document.getElementById('highScoreDisplay').innerText = userHighScore;
+    document.getElementById('gameModal').style.display = 'flex';
+    resetGame();
+}
+
+function closeGame() {
+    document.getElementById('gameModal').style.display = 'none';
+    document.getElementById('mainDashboardWrapper').style.display = 'block';
+    gameActive = false;
+}
+
+function resetGame() {
+    gameActive = true; score = 0; currentLevel = 1; gameSpeed = 5.0;
+    obstacles = []; particles = []; windLines = []; celestialAngle = -Math.PI / 4;
+    climber.y = 110; climber.dy = 0; climber.rotation = 0; climber.x = 60;
+    climber.maxJumps = 1; 
+    jumpsRemaining = 1; 
+    clouds = [];
+    weather.type = 'clear';
+    weather.windForce = 0;
+    for(let i=0; i<5; i++) spawnCloud(Math.random() * canvas.width);
+    document.getElementById('currentScore').innerText = "0";
+    if(document.getElementById('gameLevel')) document.getElementById('gameLevel').innerText = "1";
+    requestAnimationFrame(gameLoop);
+}
+
+function spawnCloud(startX = canvas.width + 50) {
+    clouds.push({ 
+        x: startX, 
+        y: 10 + Math.random() * 50, 
+        w: 40 + Math.random() * 50, 
+        speed: 0.3 + Math.random() * 0.5,
+        opacity: 0.2 + Math.random() * 0.4
+    });
+}
+
+/**
+ * ADVANCED WEATHER SYSTEM
+ * Manages transitions between: clear, rain, snow, hail, windy, and storm.
+ */
+function updateWeather() {
+    weather.timer--;
+    
+    // Switch Weather Logic
+    if (weather.timer <= 0) {
+        const types = ['clear', 'rain', 'snow', 'hail', 'windy', 'storm'];
+        const newType = types[Math.floor(Math.random() * types.length)];
+        weather.type = newType;
+        weather.timer = 300 + Math.random() * 500;
+        
+        // Adjust physical attributes based on weather
+        weather.windForce = (newType === 'windy' || newType === 'storm') ? (0.5 + Math.random() * 1.2) : 0;
+    }
+
+    // Spawn Weather Particles
+    if (weather.type !== 'clear') {
+        let spawnRate = weather.type === 'storm' ? 3 : 1;
+        for(let i=0; i < spawnRate; i++) {
+            if (particles.length < 100) {
+                particles.push({
+                    x: Math.random() * (canvas.width + 100),
+                    y: -10,
+                    vy: (weather.type === 'rain') ? 8 : (weather.type === 'hail' ? 10 : 2),
+                    vx: - (gameSpeed * 0.5) - weather.windForce * 2,
+                    size: (weather.type === 'hail') ? 4 : (weather.type === 'snow' ? 3 : 1),
+                    type: weather.type
+                });
+            }
+        }
+    }
+
+    // Rare Lightning Logic (Only in Storm)
+    if (weather.type === 'storm' && Math.random() > 0.994) {
+        lightningFlash = 1.0; 
+    }
+    if (lightningFlash > 0) lightningFlash -= 0.05;
+
+    // Wind Line Generation
+    if (weather.windForce > 0 && Math.random() > 0.85) {
+        windLines.push({ x: canvas.width + 10, y: Math.random() * canvas.height, len: 40 + Math.random() * 60, s: 8 + Math.random() * 5 });
+    }
+}
+
+function drawBackground() {
+    let targetLevel = Math.floor(score / 5) + 1;
+    if (targetLevel !== currentLevel) {
+        currentLevel = targetLevel;
+        climber.maxJumps = (currentLevel >= 2) ? 2 : 1; 
+        if(document.getElementById('gameLevel')) document.getElementById('gameLevel').innerText = currentLevel;
+    }
+
+    celestialAngle += 0.0012; 
+    let radius = 150;
+    let centerX = canvas.width / 2;
+    let centerY = 170; 
+
+    let sunX = centerX + Math.cos(celestialAngle) * radius;
+    let sunY = centerY + Math.sin(celestialAngle) * radius;
+    let moonX = centerX + Math.cos(celestialAngle + Math.PI) * radius;
+    let moonY = centerY + Math.sin(celestialAngle + Math.PI) * radius;
+
+    // Ambient Sky Color Calculation
+    let dayRatio = Math.max(0, Math.min(1, (centerY - sunY) / radius + 0.5));
+    let r = Math.floor(135 * dayRatio + 15 * (1 - dayRatio));
+    let g = Math.floor(206 * dayRatio + 23 * (1 - dayRatio));
+    let b = Math.floor(235 * dayRatio + 42 * (1 - dayRatio));
+    
+    // Desaturate for bad weather
+    if (weather.type === 'storm' || weather.type === 'hail') {
+        r *= 0.6; g *= 0.6; b *= 0.7;
+    }
+    canvas.style.background = `rgb(${r},${g},${b})`;
+
+    // Draw Celestial Bodies
+    ctx.save();
+    ctx.shadowBlur = 20; ctx.shadowColor = "#fbbf24";
+    ctx.fillStyle = "#fbbf24";
+    ctx.beginPath(); ctx.arc(sunX, sunY, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.shadowBlur = 10; ctx.shadowColor = "white";
+    ctx.fillStyle = "#e2e8f0";
+    ctx.beginPath(); ctx.arc(moonX, moonY, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Move and Draw Clouds
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    clouds.forEach((c, i) => {
+        c.x -= c.speed + (weather.windForce * 0.5);
+        ctx.globalAlpha = c.opacity;
+        ctx.beginPath(); ctx.ellipse(c.x, c.y, c.w/2, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1.0;
+        if (c.x + c.w < -50) { clouds.splice(i, 1); spawnCloud(); }
+    });
+
+    // Draw Wind Lines
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.lineWidth = 1;
+    windLines.forEach((w, i) => {
+        w.x -= (gameSpeed + w.s);
+        ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(w.x + w.len, w.y); ctx.stroke();
+        if (w.x + w.len < 0) windLines.splice(i, 1);
+    });
+
+    // Draw Weather Particles
+    particles.forEach((p, i) => {
+        p.y += p.vy; p.x += p.vx;
+        if (p.type === 'rain') {
+            ctx.fillStyle = "#93c5fd";
+            ctx.fillRect(p.x, p.y, 1, 6);
+        } else if (p.type === 'snow') {
+            ctx.fillStyle = "white";
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size/2, 0, Math.PI * 2); ctx.fill();
+        } else if (p.type === 'hail') {
+            ctx.fillStyle = "#e2e8f0";
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+        if (p.y > canvas.height || p.x < -10) particles.splice(i, 1);
+    });
+
+    // Lightning Flash Effect
+    if (lightningFlash > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${lightningFlash})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+function spawnObstacle() {
+    let lastObs = obstacles[obstacles.length - 1];
+    let minGap = Math.max(150, 260 - (currentLevel * 10));
+    let nextX = lastObs ? lastObs.x + minGap + Math.random() * 200 : canvas.width + 80;
+    
+    let pool = ['mountain', 'crate', 'boulder', 'spike'];
+    let type = pool[Math.floor(Math.random() * Math.min(currentLevel, pool.length))];
+    let isBird = (currentLevel >= 3 && Math.random() > 0.8);
+    
+    obstacles.push({ 
+        x: nextX, w: isBird ? 32 : 24 + Math.random() * 8, h: isBird ? 15 : 28, 
+        type: isBird ? 'bird' : type, yOffset: isBird ? 40 + Math.random() * 35 : 0, wing: 0 
+    });
+}
+
+function drawObstacle(obs) {
+    let colorIndex = Math.min(currentLevel - 1, obstacleColors.length - 1);
+    ctx.fillStyle = obstacleColors[colorIndex];
+    const groundY = 142;
+    const drawY = groundY - obs.yOffset;
+
+    if (obs.type === 'bird') {
+        obs.wing = Math.sin(Date.now() / 70) * 10;
+        ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(obs.x, drawY);
+        ctx.quadraticCurveTo(obs.x + obs.w/4, drawY - 12 + obs.wing, obs.x + obs.w/2, drawY);
+        ctx.quadraticCurveTo(obs.x + (obs.w * 0.75), drawY - 12 + obs.wing, obs.x + obs.w, drawY);
+        ctx.stroke();
+    } else {
+        ctx.beginPath();
+        if (obs.type === 'mountain') {
+            ctx.moveTo(obs.x, drawY); ctx.lineTo(obs.x + obs.w/2, drawY - obs.h); ctx.lineTo(obs.x + obs.w, drawY);
+        } else if (obs.type === 'crate') {
+            ctx.roundRect(obs.x, drawY - obs.h, obs.w, obs.h, 5);
+        } else {
+            ctx.arc(obs.x + obs.w/2, drawY - obs.h/2, obs.w/2, 0, Math.PI * 2);
+        }
+        ctx.fill();
+    }
+}
+
+function drawClimber(x, y, w, h) {
+    ctx.save();
+    ctx.translate(x + w / 2, y + h / 2);
+    if (!climber.grounded) { climber.rotation += 0.25; ctx.rotate(climber.rotation); }
+    
+    // Body
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath(); ctx.roundRect(-w/2, -h/2 + 8, w, h - 8, 6); ctx.fill();
+    
+    // Head
+    ctx.beginPath(); ctx.arc(0, -h/2 + 5, 7, 0, Math.PI * 2); ctx.fill();
+    
+    // Ice Axe (Funky color changes with levels)
+    ctx.strokeStyle = funkyClimberColor; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2 + 9, -9); ctx.stroke();
+    ctx.restore();
+}
+
+function gameLoop() {
+    if (!gameActive) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    updateWeather();
+    drawBackground();
+
+    climber.grav = currentLevel >= 4 ? 0.90 : 0.8;
+
+    // Draw Ground
+    ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, 142); ctx.lineTo(canvas.width, 142); ctx.stroke();
+    
+    gameSpeed += speedIncrement;
+    climber.dy += climber.grav; climber.y += climber.dy;
+
+    // Apply Wind Force to Climber (Pushing back effect)
+    if (!climber.grounded) {
+        climber.x -= weather.windForce; 
+        // Prevent being blown off screen left
+        if (climber.x < 10) climber.x = 10;
+    } else {
+        // Slowly recover position when grounded
+        if (climber.x < 60) climber.x += 0.5;
+    }
+    
+    // Landing Logic
+    if (climber.y > 110) { 
+        climber.y = 110; 
+        climber.dy = 0; 
+        climber.grounded = true; 
+        jumpsRemaining = climber.maxJumps; 
+        climber.rotation = 0;
+    }
+    
+    if (score > 0 && score % 5 === 0) {
+        funkyClimberColor = obstacleColors[score % obstacleColors.length];
+    }
+
+    drawClimber(climber.x, climber.y, climber.w, climber.h);
+
+    if (obstacles.length < 4) spawnObstacle();
+    
+    obstacles.forEach((obs, i) => {
+        obs.x -= gameSpeed;
+        drawObstacle(obs);
+        
+        let obsTop = 142 - obs.yOffset - obs.h;
+        let obsBottom = 142 - obs.yOffset;
+
+        // Collision Check
+        if (obs.x < climber.x + climber.w - 8 && obs.x + obs.w > climber.x + 8) {
+            if (climber.y + climber.h > obsTop && climber.y < obsBottom) endGame();
+        }
+
+        // Scoring
+        if (obs.x + obs.w < 0) {
+            obstacles.splice(i, 1); score++;
+            document.getElementById('currentScore').innerText = score;
+        }
+    });
+
+    requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+    gameActive = false;
+    let high = parseInt(localStorage.getItem('summitHigh') || 0);
+    if (score > high) localStorage.setItem('summitHigh', score);
+    alert(`Summit Failed!\nScore: ${score}\nWeather at death: ${weather.type.toUpperCase()}`);
+    closeGame();
+}
+
+function triggerJump(e) {
+    if (e && e.cancelable) e.preventDefault();
+    if (gameActive && jumpsRemaining > 0) {
+        climber.dy = climber.jump; 
+        climber.grounded = false; 
+        jumpsRemaining--; 
+    }
+}
+
+window.addEventListener('keydown', (e) => { 
+    if (e.code === "Space" || e.code === "ArrowUp") triggerJump(e); 
+});
+
+const gameCanvasElement = document.getElementById('gameCanvas'); 
+gameCanvasElement.addEventListener('mousedown', (e) => { 
+    if (e.button === 0) triggerJump(e); 
+});
+
+    // --- UTILS ---
+    function updateProgress() {
+        const total = document.querySelectorAll('.task-card-container').length;
+        const done = document.querySelectorAll('.task-card.done').length;
+        const perc = total === 0 ? 0 : Math.round((done / total) * 100);
+        document.getElementById('bar-fill').style.width = perc + "%";
+        document.getElementById('perc-label').innerText = perc + "%";
+    }
+    function updateHeader() {
+        const now = new Date();
+        document.getElementById('live-indicator').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " • " + now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+    function filterTasks() {
+        const search = document.getElementById('taskSearch').value.toLowerCase();
+        const prio = document.getElementById('priorityFilter').value;
+        document.querySelectorAll('.task-card-container').forEach(cont => {
+            const text = cont.querySelector('.title').innerText.toLowerCase();
+            const p = cont.getAttribute('data-priority');
+            cont.style.display = (text.includes(search) && (prio === 'all' || p === prio)) ? 'block' : 'none';
+        });
+    }
+    function toggleWorkspace() {
+        const content = document.getElementById('workspace-content');
+        content.style.display = content.style.display === "none" ? "block" : "none";
+        document.getElementById('min-btn').innerHTML = content.style.display === "none" ? "+" : "−";
+    }
+    function updateDueDateColors() {
+        const today = new Date(); today.setHours(0,0,0,0);
+        document.querySelectorAll('.due-tag').forEach(tag => {
+            const due = new Date(tag.getAttribute('data-date'));
+            const diff = Math.ceil((due - today) / 86400000);
+            tag.style.color = diff <= 0 ? "#7f1d1d" : (diff <= 2 ? "#ea580c" : "#16a34a");
+        });
+    }
+    function showZenToast(msg, icon) {
+        const toast = document.getElementById('zenNotification');
+        document.getElementById('zenMessage').innerText = msg;
+        document.getElementById('zenIcon').innerText = icon;
+        toast.style.display = 'block';
+        document.getElementById('zenPopSound').play().catch(()=>{});
+        setTimeout(() => { toast.style.display = 'none'; }, 4000);
+    }
+    function checkNudgeTimer() {
+        const last = localStorage.getItem('lastZen');
+        if (!last || (Date.now() - last) > 3600000) {
+            if (document.querySelectorAll('.task-card-container').length === 0) showZenToast("Workspace is clear. Climb time?", "🏔️");
+            localStorage.setItem('lastZen', Date.now());
+        }
+    }
+</script>
+{% endblock %}
