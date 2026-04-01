@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import ssl
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -10,7 +11,7 @@ SECRET_KEY = 'django-insecure-ea7mg)&p%-9w#gl7dls2+-3@p&beegt^w-pdd0g^e)o2#lyg%t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-# Allowing all hosts for easy development and Tunneling
+# Allowed hosts for Render and Local Development
 ALLOWED_HOSTS = [
     'clearview-webpage.onrender.com', 
     'clearview-fr6i.onrender.com', 
@@ -19,8 +20,9 @@ ALLOWED_HOSTS = [
     '127.0.0.1'
 ]
 
-# This wildcard allows ANY Cloudflare tunnel URL to work with your forms
+# Wildcards for Cloudflare/Tunneling
 CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
     'https://*.trycloudflare.com',
     'https://*.loca.lt', 
 ]
@@ -38,7 +40,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Essential for Render styles
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -83,22 +85,27 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# --- INTERNATIONALIZATION FIXES ---
+# --- INTERNATIONALIZATION ---
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Australia/Sydney' 
+TIME_ZONE = 'Australia/Sydney'
 USE_I18N = True
 USE_TZ = True
 
-# --- STATIC FILES FIXES ---
+# --- STATIC FILES FIXES (Glassmorphism & Backgrounds) ---
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# This is the line you were missing to fix the "poor" appearance on Render:
+STATIC_ROOT = BASE_DIR / "staticfiles" 
+
+# Optimizes CSS/JS delivery on Render
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- AUTHENTICATION SETTINGS ---
 LOGIN_URL = 'tasks:login'
 LOGIN_REDIRECT_URL = 'tasks:index'
 LOGOUT_REDIRECT_URL = 'tasks:welcome'
 
-# --- REAL-LIFE EMAIL SETTINGS (GMAIL) ---
+# --- EMAIL SETTINGS (GMAIL) ---
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -108,10 +115,8 @@ EMAIL_HOST_PASSWORD = 'fxgfyacjgwufrvla'
 DEFAULT_FROM_EMAIL = 'ZenStack Team <guptamridul2009@gmail.com>'
 
 # Fix for SSL certificate issues on macOS/Local
-# These three lines work together to bypass local certificate verification
 EMAIL_SSL_CONTEXT = ssl._create_unverified_context()
 EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
