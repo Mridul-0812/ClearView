@@ -95,7 +95,14 @@ USE_TZ = True
 
 # --- STATIC FILES CONFIGURATION ---
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# CRITICAL FIX: Explicitly include the tasks static directory so Render finds your styles
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+    BASE_DIR / "tasks" / "static",
+]
+
+# This is where all static files are gathered for production
 STATIC_ROOT = BASE_DIR / "staticfiles" 
 
 # Use CompressedStaticFilesStorage to avoid 'Manifest' errors that break glassmorphism

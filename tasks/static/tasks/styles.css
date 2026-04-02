@@ -34,6 +34,8 @@ body {
     background-attachment: fixed;
     overflow-x: hidden;
     padding: 20px;
+    background-size: 100% 100%;
+    background-attachment: fixed; /* Keeps the background from zooming when scrolling */
 }
 
 /* --- FIX: Background Toggle Button (Locked Top Right) --- */
