@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import ssl
+import mimetypes
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -15,6 +16,7 @@ DEBUG = False
 ALLOWED_HOSTS = [
     'clearview-webpage.onrender.com', 
     'clearview-fr6i.onrender.com', 
+    'clearview-1.onrender.com',
     '.onrender.com', 
     'localhost', 
     '127.0.0.1'
@@ -91,14 +93,17 @@ TIME_ZONE = 'Australia/Sydney'
 USE_I18N = True
 USE_TZ = True
 
-# --- STATIC FILES FIXES (Glassmorphism & Backgrounds) ---
+# --- STATIC FILES CONFIGURATION ---
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
-# This is the line you were missing to fix the "poor" appearance on Render:
 STATIC_ROOT = BASE_DIR / "staticfiles" 
 
-# Optimizes CSS/JS delivery on Render
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Use CompressedStaticFilesStorage to avoid 'Manifest' errors that break glassmorphism
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# Force CSS MIME types so browsers don't block blur/filter effects
+mimetypes.add_type("text/css", ".css", True)
+WHITENOISE_MIMETYPES = {'.css': 'text/css'}
 
 # --- AUTHENTICATION SETTINGS ---
 LOGIN_URL = 'tasks:login'
@@ -120,11 +125,3 @@ EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-WHITENOISE_MIMETYPES = {'.css': 'text/css'}
-
-import mimetypes
-mimetypes.add_type("text/css", ".css", True)
-
-# Simplified storage to prevent 'Manifest' errors that block glass effects
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
