@@ -96,21 +96,25 @@ USE_TZ = True
 # --- STATIC FILES CONFIGURATION ---
 STATIC_URL = 'static/'
 
-# CRITICAL FIX: Explicitly include the tasks static directory so Render finds your styles
+# Tells Django where to find your files before collecting them
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    BASE_DIR / "tasks" / "static",
+    BASE_DIR / "tasks" / "static", # Essential for your specific folder structure
 ]
 
-# This is where all static files are gathered for production
+# The final destination for Render's web server
 STATIC_ROOT = BASE_DIR / "staticfiles" 
 
-# Use CompressedStaticFilesStorage to avoid 'Manifest' errors that break glassmorphism
+# Use CompressedStaticFilesStorage for glassmorphism stability
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Force CSS MIME types so browsers don't block blur/filter effects
 mimetypes.add_type("text/css", ".css", True)
 WHITENOISE_MIMETYPES = {'.css': 'text/css'}
+
+# Prevent Render from blocking the 'backdrop-filter' blur effect
+SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # --- AUTHENTICATION SETTINGS ---
 LOGIN_URL = 'tasks:login'
