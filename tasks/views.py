@@ -33,22 +33,19 @@ def signup(request):
         email = request.POST.get('email')
         
         if form.is_valid() and email:
-            # 1. Check if email exists BEFORE saving anything
             if User.objects.filter(email=email).exists():
                 return render(request, 'tasks/signup.html', {
                     'form': form, 
                     'error': "This email is already registered."
                 })
 
-            # 2. Prepare user object in memory (DO NOT save yet)
             user = form.save(commit=False)
             user.email = email
-            user.is_active = True 
-            
+            user.is_active = True  # Keep this True to avoid login lockouts
+            user.save()
+
+            # Attempt to send email, but DON'T crash if it fails
             try:
-                # 3. Only save to DB if we are about to attempt email sending
-                user.save()
-                
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
                 protocol = 'https' if request.is_secure() else 'http'
@@ -60,25 +57,23 @@ def signup(request):
                 )
                 
                 send_mail(
-                    'Confirm your ZenStack Account',
-                    f'Welcome {user.username}!\n\nClick here to activate your account: {link}',
+                    'Welcome to ZenStack',
+                    f'Hi {user.username}! Your account is active. Explore here: {link}',
                     settings.DEFAULT_FROM_EMAIL,
                     [user.email],
                     connection=connection,
                     fail_silently=False,
                 )
-                
-                messages.success(request, "Success! Please check your Gmail inbox to activate your account.")
-                return redirect('tasks:login')
-            
+                messages.success(request, "Account created! Check your email for a welcome link.")
             except Exception as e:
-                # 4. Clean up the user record if email fails so the username stays available
-                if user.pk:
-                    user.delete() 
-                return render(request, 'tasks/signup.html', {
-                    'form': form, 
-                    'error': f"Failed to send email. Ensure your Gmail App Password is correct. Error: {str(e)}"
-                })
+                # We log the error in the console but DON'T show the 500 error page
+                print(f"SMTP Error: {e}")
+                messages.warning(request, "Account created, but we couldn't send the welcome email.")
+
+            # Log the user in automatically so they don't have to deal with the login page
+            login(request, user)
+            return redirect('tasks:index')
+            
         else:
             error_msg = "Please correct the errors below." if form.errors else "Email is required."
             return render(request, 'tasks/signup.html', {'form': form, 'error': error_msg})
