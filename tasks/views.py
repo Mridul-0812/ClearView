@@ -43,7 +43,7 @@ def signup(request):
             # 2. Prepare user object in memory (DO NOT save yet)
             user = form.save(commit=False)
             user.email = email
-            user.is_active = False 
+            user.is_active = True 
             
             try:
                 # 3. Only save to DB if we are about to attempt email sending
