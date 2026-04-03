@@ -14,7 +14,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from .models import Task
 from django.contrib import messages
-from django.shortcuts import render, redirect, get_object_or_404
 
 # New imports for Analytics & Time Awareness
 from django.utils import timezone
@@ -34,23 +33,27 @@ def signup(request):
         email = request.POST.get('email')
         
         if form.is_valid() and email:
+            # 1. Check if email exists BEFORE saving anything
             if User.objects.filter(email=email).exists():
                 return render(request, 'tasks/signup.html', {
                     'form': form, 
                     'error': "This email is already registered."
                 })
 
+            # 2. Prepare user object in memory (DO NOT save yet)
             user = form.save(commit=False)
             user.email = email
             user.is_active = False 
-            user.save()
-            
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-            protocol = 'https' if request.is_secure() else 'http'
-            link = f"{protocol}://{request.get_host()}/tasks/activate/{uid}/{token}/"
             
             try:
+                # 3. Only save to DB if we are about to attempt email sending
+                user.save()
+                
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                protocol = 'https' if request.is_secure() else 'http'
+                link = f"{protocol}://{request.get_host()}/tasks/activate/{uid}/{token}/"
+                
                 connection = get_connection(
                     backend=settings.EMAIL_BACKEND,
                     ssl_context=ssl._create_unverified_context()
@@ -69,10 +72,12 @@ def signup(request):
                 return redirect('tasks:login')
             
             except Exception as e:
-                user.delete() 
+                # 4. Clean up the user record if email fails so the username stays available
+                if user.pk:
+                    user.delete() 
                 return render(request, 'tasks/signup.html', {
                     'form': form, 
-                    'error': f"Failed to send email. Error: {str(e)}"
+                    'error': f"Failed to send email. Ensure your Gmail App Password is correct. Error: {str(e)}"
                 })
         else:
             error_msg = "Please correct the errors below." if form.errors else "Email is required."
@@ -165,7 +170,6 @@ def delete(request, task_id):
     task.save()
     return redirect("tasks:index")
 
-# tasks/views.py
 @login_required
 def zen_beats(request):
     return render(request, "tasks/beats.html")
@@ -176,7 +180,6 @@ def toggle(request, task_id):
     task.completed = not task.completed 
     
     if task.completed:
-        # Crucial for the chart: saves the current time locally
         task.completed_at = timezone.now()
     else:
         task.completed_at = None
@@ -187,49 +190,43 @@ def toggle(request, task_id):
 # --- 3. ANALYTICS ---
 
 @login_required
-
 def focus_timer(request):
     """View for the productivity timer page"""
     return render(request, "tasks/timer.html")
 
+@login_required
 def edit_task(request, task_id):
-    # Use get_object_or_404 to prevent errors if the task doesn't exist
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(Task, id=task_id, user=request.user)
 
     if request.method == "POST":
-        # Pull data from the form
         title = request.POST.get("title")
         priority = request.POST.get("priority")
         due_date = request.POST.get("due_date")
 
-        # Update the task object
         task.title = title
         task.priority = priority
         
-        # Only update the date if it's not empty, otherwise set to None
         if due_date:
             task.due_date = due_date
         else:
             task.due_date = None
             
-        task.save() # This is the line that actually updates the database!
+        task.save() 
         return redirect("tasks:index")
 
     return render(request, "tasks/edit.html", {"task": task})
 
+@login_required
 def climb_stats(request):
-    # localdate() ensures it detects your Tuesday, March 3
     today = timezone.localdate()
     
     labels = []
     data_points = []
     
-    # Loops 6 days back up to Today
     for i in range(6, -1, -1):
         target_day = today - timedelta(days=i)
         labels.append(target_day.strftime('%a')) 
         
-        # Count tasks for THIS user completed on THIS target day
         count = Task.objects.filter(
             user=request.user,
             completed=True,
@@ -237,7 +234,6 @@ def climb_stats(request):
         ).count()
         data_points.append(count)
 
-    # Achievement Logic
     total_completed = Task.objects.filter(user=request.user, completed=True).count()
     daily_count = data_points[-1] 
     total_active = Task.objects.filter(user=request.user, completed=False, is_archived=False).count()
