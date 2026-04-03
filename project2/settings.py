@@ -100,7 +100,6 @@ STATIC_URL = 'static/'
 
 # Correctly targets the nested 'tasks' folder to find styles.css
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
     BASE_DIR / "tasks" / "static", 
 ]
 
@@ -134,3 +133,9 @@ EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Security settings for Render HTTPS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
