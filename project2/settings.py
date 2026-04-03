@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import ssl
 import mimetypes
+import dj_database_url  # You'll need to add 'dj-database-url' to requirements.txt
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,7 +43,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Essential for Render styles
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -71,12 +72,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'project2.wsgi.application'
 
-# Database
+# --- DATABASE CONFIGURATION ---
+# This pulls your permanent PostgreSQL URL from Render's environment variables
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3', # Fallback for local dev
+        conn_max_age=600
+    )
 }
 
 # Password validation
@@ -96,23 +98,20 @@ USE_TZ = True
 # --- STATIC FILES CONFIGURATION ---
 STATIC_URL = 'static/'
 
-# Tells Django where to find your files before collecting them
+# Correctly targets the nested 'tasks' folder to find styles.css
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    BASE_DIR / "tasks" / "static", # Essential for your specific folder structure
+    BASE_DIR / "tasks" / "static", 
 ]
 
-# The final destination for Render's web server
 STATIC_ROOT = BASE_DIR / "staticfiles" 
 
-# Use CompressedStaticFilesStorage for glassmorphism stability
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-# Force CSS MIME types so browsers don't block blur/filter effects
+# Force CSS MIME types so browsers don't block glassmorphism
 mimetypes.add_type("text/css", ".css", True)
 WHITENOISE_MIMETYPES = {'.css': 'text/css'}
 
-# Prevent Render from blocking the 'backdrop-filter' blur effect
 SECURE_REFERRER_POLICY = "no-referrer-when-downgrade"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
@@ -130,7 +129,6 @@ EMAIL_HOST_USER = 'guptamridul2009@gmail.com'
 EMAIL_HOST_PASSWORD = 'fxgfyacjgwufrvla' 
 DEFAULT_FROM_EMAIL = 'ZenStack Team <guptamridul2009@gmail.com>'
 
-# Fix for SSL certificate issues on macOS/Local
 EMAIL_SSL_CONTEXT = ssl._create_unverified_context()
 EMAIL_SSL_CERTFILE = None
 EMAIL_SSL_KEYFILE = None
