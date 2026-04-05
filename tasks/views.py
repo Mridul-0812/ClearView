@@ -33,50 +33,49 @@ def signup(request):
         email = request.POST.get('email')
         
         if form.is_valid() and email:
+            # 1. Email existence check
             if User.objects.filter(email=email).exists():
                 return render(request, 'tasks/signup.html', {
                     'form': form, 
                     'error': "This email is already registered."
                 })
 
+            # 2. Save User immediately
             user = form.save(commit=False)
             user.email = email
-            user.is_active = True  # Keep this True to avoid login lockouts
+            user.is_active = True  # Bypass activation requirement
             user.save()
 
-            # Attempt to send email, but DON'T crash if it fails
+            # 3. Attempt Email (FAIL-SAFE)
             try:
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
                 protocol = 'https' if request.is_secure() else 'http'
-                link = f"{protocol}://{request.get_host()}/tasks/activate/{uid}/{token}/"
+                domain = request.get_host()
+                link = f"{protocol}://{domain}/tasks/activate/{uid}/{token}/"
                 
-                connection = get_connection(
-                    backend=settings.EMAIL_BACKEND,
-                    ssl_context=ssl._create_unverified_context()
-                )
-                
+                # Simplified send_mail (Let Django handles the connection based on settings.py)
                 send_mail(
                     'Welcome to ZenStack',
-                    f'Hi {user.username}! Your account is active. Explore here: {link}',
+                    f'Hi {user.username}!\n\nYour account is active. Explore your tasks here: {link}',
                     settings.DEFAULT_FROM_EMAIL,
                     [user.email],
-                    connection=connection,
-                    fail_silently=False,
+                    fail_silently=False, 
                 )
-                messages.success(request, "Account created! Check your email for a welcome link.")
+                messages.success(request, f"Welcome {user.username}! Account created successfully.")
+            
             except Exception as e:
-                # We log the error in the console but DON'T show the 500 error page
-                print(f"SMTP Error: {e}")
+                # This catches Gmail/SMTP errors without crashing the page
+                print(f"DEBUG: Email failed but user is saved. Error: {str(e)}")
                 messages.warning(request, "Account created, but we couldn't send the welcome email.")
 
-            # Log the user in automatically so they don't have to deal with the login page
+            # 4. Final step: Log in and Redirect
             login(request, user)
             return redirect('tasks:index')
             
         else:
-            error_msg = "Please correct the errors below." if form.errors else "Email is required."
-            return render(request, 'tasks/signup.html', {'form': form, 'error': error_msg})
+            # Handle form errors (like password too short)
+            return render(request, 'tasks/signup.html', {'form': form})
                 
     else:
         form = UserCreationForm()
